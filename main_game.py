@@ -127,7 +127,7 @@ class Game:
                 y=10,
                 text="+50",
                 font=self.font,
-                color=(255, 255, 0),
+                color="#FF3E3E",
                 duration=1000,  # 動畫持續 1 秒
             )
             self.coin_animations.append(animation)
