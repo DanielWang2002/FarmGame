@@ -18,7 +18,9 @@ class EventHandler:
         dirt_grid = self.game.dirt_grid
         background = self.game.background
         seed_inventory = self.game.seed_inventory
-        tool_inventory = self.game.tool_inventory
+        # [註解開始] right_inventory (tool_inventory) 暫時註解掉
+        # tool_inventory = self.game.tool_inventory
+        # [註解結束]
         coin = self.game.coin  # 獲取金幣對象
 
         for event in pygame.event.get():
@@ -32,7 +34,7 @@ class EventHandler:
                     farmer_bottom_y = farmer.y + farmer.image_height
                     grid_position = farm_grid.get_grid_position(farmer_center_x, farmer_bottom_y)
                     if grid_position:
-                        grid_x, grid_y = grid_position[0], grid_position[1]
+                        grid_x, grid_y = grid_position
                         dirt = dirt_grid[grid_y][grid_x]
                         if dirt is None:
                             # 放置新的泥土，成本為50金幣
@@ -62,29 +64,30 @@ class EventHandler:
                                     print("金幣不足，無法升級泥土！")
                             else:
                                 print("泥土已達最高等級！")
+
                 elif event.key == pygame.K_w:
                     # 處理按下 'w' 鍵的事件，切換種子庫存的數字顯示狀態
                     seed_inventory.toggle_numbers()
                     if seed_inventory.show_numbers:
-                        tool_inventory.show_numbers = False
-                        tool_inventory.clear_selection()
+                        # [註解開始] tool_inventory 相關
+                        # tool_inventory.show_numbers = False
+                        # tool_inventory.clear_selection()
+                        # [註解結束]
+                        pass
                     else:
                         seed_inventory.clear_selection()
-                elif event.key == pygame.K_e:
-                    # 處理按下 'e' 鍵的事件，切換道具庫存的數字顯示狀態
-                    tool_inventory.toggle_numbers()
-                    if tool_inventory.show_numbers:
-                        seed_inventory.show_numbers = False
-                        seed_inventory.clear_selection()
-                    else:
-                        tool_inventory.clear_selection()
-                elif event.key in (
-                    pygame.K_1,
-                    pygame.K_2,
-                    pygame.K_3,
-                    pygame.K_4,
-                    pygame.K_5,
-                ):
+
+                # [註解開始] 按下 'e' 切換道具庫存 (tool_inventory) 的功能，暫時註解
+                # elif event.key == pygame.K_e:
+                #     tool_inventory.toggle_numbers()
+                #     if tool_inventory.show_numbers:
+                #         seed_inventory.show_numbers = False
+                #         seed_inventory.clear_selection()
+                #     else:
+                #         tool_inventory.clear_selection()
+                # [註解結束]
+
+                elif event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5):
                     # 處理數字鍵 '1' 到 '5' 的按下事件
                     slot_number = int(event.unicode) - 1  # 將 '1'-'5' 轉換為 0-4
                     if seed_inventory.show_numbers:
@@ -98,7 +101,7 @@ class EventHandler:
                                     farmer_center_x, farmer_bottom_y
                                 )
                                 if grid_position:
-                                    grid_x, grid_y = grid_position[0], grid_position[1]
+                                    grid_x, grid_y = grid_position
                                     dirt = dirt_grid[grid_y][grid_x]
                                     if dirt:
                                         if dirt.plant is None:
@@ -116,6 +119,40 @@ class EventHandler:
                                             print("這塊泥土已經有植物了！")
                                     else:
                                         print("這塊泥土尚未被初始化！")
-                    elif tool_inventory.show_numbers:
-                        # 處理道具庫存的選擇（暫時不處理）
-                        tool_inventory.select_slot(slot_number)
+
+                elif event.key == pygame.K_SPACE:
+                    # 收穫植物的功能：若植物已到第 5 階，可收穫並獲得 50 金幣
+                    farmer_center_x = farmer.x + farmer.image_width // 2
+                    farmer_bottom_y = farmer.y + farmer.image_height
+                    grid_position = farm_grid.get_grid_position(farmer_center_x, farmer_bottom_y)
+                    if grid_position:
+                        grid_x, grid_y = grid_position
+                        dirt = dirt_grid[grid_y][grid_x]
+                        if dirt and dirt.plant:
+                            # 若植物已經是第 5 階段，則可以收穫
+                            if dirt.plant.stage == 5:
+                                coin.increase(50)
+                                print("收穫成功，獲得 50 金幣！")
+                                # 收穫後移除植物
+                                dirt.plant = None
+
+                                # === 新增動畫邏輯 ===
+                                coin_text = f"金幣：{coin.get_amount()}"
+                                coin_text_width, _ = self.game.font.size(coin_text)
+
+                                # x 座標略靠右（在金幣數字後面 10px）
+                                anim_x = 10 + coin_text_width + 10
+                                anim_y = 10  # 與金幣顯示同高度
+
+                                animation = self.game.create_coin_animation(
+                                    x=anim_x,
+                                    y=anim_y,
+                                    text="+50",
+                                    color="#FF3E3E",
+                                    duration=2000,  # 可改 2000 或更久，以免太快消失
+                                )
+                                self.game.coin_animations.append(animation)
+                                # === 動畫邏輯結束 ===
+
+                            else:
+                                print("此植物尚未成熟，無法收穫！")

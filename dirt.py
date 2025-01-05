@@ -24,13 +24,19 @@ class Dirt:
         self.farm_grid_y = farm_grid_y
         self.block_width = block_width
         self.block_height = block_height
+
         # 載入圖片和計算位置
         self.load_image()
         self.calculate_position()
-        # 成長速度加成
+
+        # 成長速度加成（對應 settings.py 裏 DIRT_LEVELS[self.level]["growth_speed_bonus"]）
         self.growth_speed_bonus = DIRT_LEVELS[self.level]["growth_speed_bonus"]
+
         # 初始化植物
         self.plant = None  # 初始沒有植物
+
+        # 新增：紀錄最後一次成長時間（毫秒）
+        self.last_growth_time = 0
 
     def load_image(self):
         # 根據等級載入對應的圖片
@@ -61,6 +67,8 @@ class Dirt:
         if self.plant is None:
             self.plant = plant
             print(f"種下了 {plant.__class__.__name__}！")
+            # 初始化 last_growth_time，在第一次種下時設定
+            self.last_growth_time = pygame.time.get_ticks()
         else:
             print("這塊泥土已經有植物了！")
 
