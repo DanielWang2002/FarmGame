@@ -22,7 +22,7 @@ class AutoGame(Game):
         super().__init__()
 
         # 總遊戲時間（毫秒，1 分鐘 = 60000 毫秒）
-        self.total_time = 60000
+        self.total_time = 30000
         self.start_time = pygame.time.get_ticks()
 
         # 設定 FPS
@@ -63,8 +63,8 @@ class AutoGame(Game):
             # 2. 檢查是否需要執行下一次動作
             if current_ticks >= self.next_action_time:
                 self.do_random_action()
-                # 設定下一次動作的時間點（隨機 2~5 秒後）
-                self.next_action_time = current_ticks + random.randint(100, 500)
+                # 設定下一次動作的時間點 0.5 秒後）
+                self.next_action_time = current_ticks + 1000
 
             # 3. 處理事件
             self.event_handler.handle_events()
@@ -112,6 +112,7 @@ class AutoGame(Game):
         """
         # 先嘗試收穫
         harvested = self.try_harvest()
+        
         if not harvested:
             # 若無可收穫的作物，則隨機放土與種植
             self.place_soil_and_plant()
@@ -137,6 +138,9 @@ class AutoGame(Game):
 
         # 執行收穫
         self.harvest(target_r, target_c)
+        if random.randint(0, 1) == 1:
+            self.place_soil(target_r, target_c)
+            self.plant_seed(target_r, target_c)
         return True
 
     def place_soil_and_plant(self):
@@ -150,7 +154,7 @@ class AutoGame(Game):
         # 移動農夫至該位置
         self.move_farmer_to(r, c)
 
-        # 放置泥土
+        # 放置或升級泥土
         self.place_soil(r, c)
 
         # 種植作物
@@ -183,6 +187,7 @@ class AutoGame(Game):
         在指定農地放置泥土，若該格無泥土且金幣足夠。
         """
         dirt = self.dirt_grid[r][c]
+        current_time_s = (pygame.time.get_ticks() - self.start_time) // 1000
         if dirt is None:
             # 放置新的泥土，成本為50金幣
             cost = 50
@@ -197,8 +202,21 @@ class AutoGame(Game):
                     level=0,
                 )
                 self.dirt_grid[r][c] = dirt
+                old_coins = self.coin.get_amount()
                 self.coin.decrease(cost)
+                new_coins = self.coin.get_amount()
                 print(f"Placed dirt at ({r}, {c}).")
+                # 行為紀錄
+                action_entry = {
+                    "EntryType": "ACTION",
+                    "Time (s)": current_time_s,
+                    "Action": "PlaceSoil",
+                    "Grid Row": r,
+                    "Grid Column": c,
+                    "Coins Before": old_coins,
+                    "Coins After": new_coins,
+                }
+                self.game_data.append(action_entry)
             else:
                 print("Insufficient coins to place dirt.")
         else:
@@ -206,9 +224,23 @@ class AutoGame(Game):
             if dirt.level < len(DIRT_LEVELS) - 1:
                 upgrade_cost = DIRT_LEVELS[dirt.level]["upgrade_cost"]
                 if self.coin.get_amount() >= upgrade_cost:
+                    old_coins = self.coin.get_amount()
                     self.coin.decrease(upgrade_cost)
                     dirt.upgrade()
+                    new_coins = self.coin.get_amount()
                     print(f"Upgraded dirt at ({r}, {c}) to level {dirt.level}.")
+                    # 行為紀錄
+                    action_entry = {
+                        "EntryType": "ACTION",
+                        "Time (s)": current_time_s,
+                        "Action": "UpgradeSoil",
+                        "Grid Row": r,
+                        "Grid Column": c,
+                        "Soil Level After": dirt.level,
+                        "Coins Before": old_coins,
+                        "Coins After": new_coins,
+                    }
+                    self.game_data.append(action_entry)
                 else:
                     print("Insufficient coins to upgrade dirt.")
             else:
@@ -219,6 +251,7 @@ class AutoGame(Game):
         在指定農地種植作物，若該格有泥土且無作物且有種子。
         """
         dirt = self.dirt_grid[r][c]
+        current_time_s = (pygame.time.get_ticks() - self.start_time) // 1000
         if dirt and dirt.plant is None:
             # 選擇一種種子（隨機選擇）
             available_seeds = [item for item in self.seed_inventory.items if item]
@@ -230,11 +263,26 @@ class AutoGame(Game):
                 plant_image_path = "./img/CropSeed2.png"  # 可以根據種子種類調整
                 plant = Plant(image_path=plant_image_path, scale=(64, 64))
                 dirt.plant_seed(plant)
+
                 # 庫存減1
+                old_quantity = self.seed_inventory.quantities[seed_index]
                 self.seed_inventory.quantities[seed_index] -= 1
                 if self.seed_inventory.quantities[seed_index] == 0:
                     self.seed_inventory.items[seed_index] = None
                 print(f"Planted {seed.name} at ({r}, {c}).")
+                 # 行為紀錄
+                action_entry = {
+                    "EntryType": "ACTION",
+                    "Time (s)": current_time_s,
+                    "Action": "PlantSeed",
+                    "Grid Row": r,
+                    "Grid Column": c,
+                    "Seed Name": seed.name,
+                    "Seed Quantity Before": old_quantity,
+                    "Seed Quantity After": self.seed_inventory.quantities[seed_index],
+                    "Coins": self.coin.get_amount(),
+                }
+                self.game_data.append(action_entry)
             else:
                 print("No seeds available to plant.")
         else:
@@ -247,8 +295,22 @@ class AutoGame(Game):
         dirt = self.dirt_grid[r][c]
         if dirt and dirt.plant and dirt.plant.stage == 5:
             # 增加金幣
+            old_coins = self.coin.get_amount()
             self.coin.increase(50)
+            new_coins = self.coin.get_amount()
             print(f"Harvested plant at ({r}, {c}) and gained 50 coins.")
+             # 行為紀錄
+            current_time_s = (pygame.time.get_ticks() - self.start_time) // 1000
+            action_entry = {
+                "EntryType": "ACTION",
+                "Time (s)": current_time_s,
+                "Action": "Harvest",
+                "Grid Row": r,
+                "Grid Column": c,
+                "Coins Before": old_coins,
+                "Coins After": new_coins,
+            }
+            self.game_data.append(action_entry)
             # 移除作物
             dirt.plant = None
 
@@ -299,6 +361,7 @@ class AutoGame(Game):
 
                     # 構建數據字典
                     data_entry = {
+                        "EntryType": "STATE",
                         "Time (s)": elapsed_seconds,
                         "Grid Row": r,
                         "Grid Column": c,
@@ -306,7 +369,6 @@ class AutoGame(Game):
                         "Plant Level": plant_level,
                         "Coins": self.coin.get_amount(),
                     }
-
                     self.game_data.append(data_entry)
 
     def save_game_data(self):
@@ -323,9 +385,15 @@ class AutoGame(Game):
 
         # 儲存為 .csv 檔案
         df.to_csv(self.csv_filename, index=False, encoding='utf-8-sig')
-        print(f"Game data saved to {self.csv_filename}.")
+        print(f"Game data (STATE & ACTION) saved to {self.csv_filename}.")
 
 
 if __name__ == "__main__":
-    auto_game = AutoGame()
-    auto_game.run()
+    time =0
+    while(True):
+        auto_game = AutoGame()
+        auto_game.run()
+        if time == 200:
+            break
+        time +=1
+    
