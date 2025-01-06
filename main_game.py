@@ -53,7 +53,7 @@ class Game:
         self.event_handler = EventHandler(self)
 
         # 初始化金幣
-        self.coin = Coin(initial_amount=5000)
+        self.coin = Coin(initial_amount=100)
 
         # coin_animations 用於 +50 浮動動畫
         self.coin_animations = []
@@ -170,9 +170,15 @@ class Game:
         self.screen.blit(text_surface, (10, 10))
 
     def draw_timer(self):
-        elapsed_time = (pygame.time.get_ticks() - self.start_time) // 1000
-        minutes = elapsed_time // 60
-        seconds = elapsed_time % 60
+        # elapsed_time = (pygame.time.get_ticks() - self.start_time) // 1000
+        # minutes = elapsed_time // 60
+        # seconds = elapsed_time % 60
+        # time_text = f"{minutes:02d}:{seconds:02d}"
+        # text_surface = self.timer_font.render(time_text, True, "#FFFFFF", "#E1D9B5")
+        elapsed_time_ms = pygame.time.get_ticks() - self.start_time
+        elapsed_seconds = elapsed_time_ms // 1000  # 轉成整數秒
+        minutes = elapsed_seconds // 60
+        seconds = elapsed_seconds % 60
         time_text = f"{minutes:02d}:{seconds:02d}"
         text_surface = self.timer_font.render(time_text, True, "#FFFFFF", "#E1D9B5")
         text_rect = text_surface.get_rect()
