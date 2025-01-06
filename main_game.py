@@ -152,7 +152,7 @@ class Game:
         就讓植物長一階 (stage + 1)。
         """
         current_time = pygame.time.get_ticks()
-        base_grow_time = 2000  # 2 秒 = 2000 毫秒
+        base_grow_time = 200  # 2 秒 = 2000 毫秒
 
         for row in self.dirt_grid:
             for dirt in row:

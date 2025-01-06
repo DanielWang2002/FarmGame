@@ -19,7 +19,7 @@ DIRT_LEVELS = [
     {
         "name": "Normal",
         "image": "./img/Dirt_Normal.png",
-        "upgrade_cost": 25,  # 升級到下一級的費用
+        "upgrade_cost": 20,  # 升級到下一級的費用
         "growth_speed_bonus": 0,
     },
     {
@@ -31,7 +31,7 @@ DIRT_LEVELS = [
     {
         "name": "Extra",
         "image": "./img/Dirt_Extra.png",
-        "upgrade_cost": 125,
+        "upgrade_cost": 115,
         "growth_speed_bonus": 0.10,
     },
     {
