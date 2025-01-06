@@ -19,6 +19,10 @@ class Game:
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption("Farm Game")
 
+        # 遊戲時間限制：1 分鐘（以毫秒計算）
+        self.time_limit = 1 * 60 * 1000  # 1 分鐘
+        self.start_time = pygame.time.get_ticks()  # 遊戲開始時間
+
         # 遊戲物件
         self.background = Background()
         self.farmer = Farmer()
@@ -76,6 +80,11 @@ class Game:
         while True:
             # 處理事件
             self.event_handler.handle_events()
+
+            # 檢查遊戲是否時間到
+            if self.is_time_up():
+                self.display_time_up_message()
+                break
 
             # 更新遊戲狀態
             keys = pygame.key.get_pressed()
@@ -136,6 +145,34 @@ class Game:
     #         self.coin.increase(50)
     #         # 這裡本來也會產生 +50 動畫
     # [註解結束]
+    def is_time_up(self):
+        """檢查遊戲是否時間到。"""
+        current_time = pygame.time.get_ticks()
+        return current_time - self.start_time >= self.time_limit
+    def display_time_up_message(self):
+        """顯示時間到的訊息並結束遊戲。"""
+        # 清空畫面
+        self.screen.fill((0, 0, 0))
+
+        # 顯示時間到的訊息
+        time_up_text = "時間到！"
+        print("時間到！")
+        coin_text = f"目前的金錢：{self.coin.get_amount()}"
+        print("目前的金錢:",coin_text)
+        time_up_surface = self.font.render(time_up_text, True, "#FFFFFF")
+        coin_surface = self.font.render(coin_text, True, "#FFFFFF")
+
+        time_up_rect = time_up_surface.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 3))
+        coin_rect = coin_surface.get_rect(center=(WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2))
+
+        self.screen.blit(time_up_surface, time_up_rect)
+        self.screen.blit(coin_surface, coin_rect)
+
+        pygame.display.flip()
+        pygame.time.wait(3000)  # 暫停 3 秒顯示訊息
+
+        pygame.quit()
+        quit()
 
     def update_seeds(self):
         """每 1 秒增加一顆小麥種子。"""
