@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 # 資料準備
-file_path = './combined_changenote.csv'
+file_path = 'combined_changenote.csv'
 data = pd.read_csv(file_path)
 
 # 分離特徵與目標值
@@ -33,6 +33,13 @@ def mean_squared_error(y_true, y_pred):
 def mean_squared_error_derivative(y_true, y_pred):
     return -(2 / len(y_true)) * (y_true - y_pred)
 
+# 定義其他指標
+def mean_absolute_error(y_true, y_pred):
+    return np.mean(np.abs(y_true - y_pred))
+
+def root_mean_squared_error(y_true, y_pred):
+    return np.sqrt(mean_squared_error(y_true, y_pred))
+
 # 初始化神經網路參數
 input_size = X_train.shape[1]
 hidden_size1 = 128
@@ -48,8 +55,8 @@ W3 = np.random.randn(hidden_size2, output_size) * 0.01
 b3 = np.zeros((1, output_size))
 
 # 設定超參數
-learning_rate = 0.001
-epochs = 500
+learning_rate = 0.0001
+epochs = 300
 
 # 訓練神經網路
 for epoch in range(epochs):
@@ -104,9 +111,14 @@ y_test_pred = Z3_test.flatten()
 
 # 計算測試損失
 test_loss = mean_squared_error(y_test, y_test_pred)
-print(f"Test Loss: {test_loss:.4f}")
+test_mae = mean_absolute_error(y_test, y_test_pred)
+test_rmse = root_mean_squared_error(y_test, y_test_pred)
 
-# 範例預測
+print(f"Test Loss (MSE): {test_loss:.4f}")
+print(f"Test MAE: {test_mae:.4f}")
+print(f"Test RMSE: {test_rmse:.4f}")
+
+# 預測
 example_input = scaler.transform(np.array([[100, 50, 20, 0, 60, 0.05, 115, 0.1, 0, 0.2]]))
 Z1_example = np.dot(example_input, W1) + b1
 A1_example = relu(Z1_example)
@@ -115,4 +127,4 @@ A2_example = relu(Z2_example)
 Z3_example = np.dot(A2_example, W3) + b3
 example_output = Z3_example.flatten()[0]
 
-print(f"Example Prediction for Input: {example_output:.2f}")
+print(f"Prediction for Input: {example_output:.2f}")
